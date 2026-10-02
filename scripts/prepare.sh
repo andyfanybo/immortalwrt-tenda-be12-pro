@@ -23,7 +23,7 @@ mkdir -p files/etc/openclash/core
 ln -s /usr/bin/mihomo files/etc/openclash/core/clash_meta
 {
   printf 'ImmortalWrt %s\n' "$(git rev-parse HEAD)"
-  for feed in packages luci routing telephony video nikki; do
+  for feed in packages luci routing telephony nikki; do
     printf '%s %s\n' "$feed" "$(git -C "feeds/$feed" rev-parse HEAD)"
   done
 } > "$ROOT/build-info/source-versions.txt"

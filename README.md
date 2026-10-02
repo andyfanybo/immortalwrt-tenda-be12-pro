@@ -50,7 +50,7 @@ WAN zone 的默认入站策略和 WAN→LAN 转发策略保持官方默认，防
 
 `config/source.env` 固定 ImmortalWrt 主源码 commit；`config/feeds.conf` 使用官方支持的 `^commit` 语法固定全部 feeds。初始版本于 2026-10-02 核实。修改固定版本即可更新；若更新上游造成设备或插件选项失效，工作流会在编译前失败，不会默默生成缺少插件的固件。
 
-`config/be12-pro.config` 为最小增量配置，`make defconfig` 展开官方默认依赖。不要删掉官方设备默认驱动，也不要通过盲目扩大 rootfs 配置改变物理 NAND 分区。编译日志会显示空间超限等问题。
+`config/be12-pro.config` 为最小增量配置，`make defconfig` 展开官方默认依赖。使用单设备模式的 `CONFIG_TARGET_mediatek_filogic_DEVICE_tenda_be12-pro=y`；不引入本固件用不到且存在配置依赖循环的视频 feed。不要删掉官方设备默认驱动，也不要通过盲目扩大 rootfs 配置改变物理 NAND 分区。编译日志会显示空间超限等问题。
 
 ## 上游资料
 

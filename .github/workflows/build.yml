@@ -47,12 +47,12 @@ jobs:
         working-directory: openwrt
         run: |
           set -euxo pipefail
-          make defconfig
-          for symbol in TARGET_mediatek TARGET_mediatek_filogic TARGET_DEVICE_mediatek_filogic_DEVICE_tenda_be12-pro PACKAGE_luci-app-openclash PACKAGE_luci-app-nikki PACKAGE_nikki PACKAGE_mihomo-meta PACKAGE_firewall4 PACKAGE_dnsmasq-full; do
-            grep -Fx "CONFIG_${symbol}=y" .config
-          done
+          make defconfig 2>&1 | tee ../build-info/defconfig.log
           cp .config ../build-info/full.config
           ./scripts/diffconfig.sh > ../build-info/diffconfig
+          for symbol in TARGET_mediatek TARGET_mediatek_filogic TARGET_mediatek_filogic_DEVICE_tenda_be12-pro PACKAGE_luci-app-openclash PACKAGE_luci-app-nikki PACKAGE_nikki PACKAGE_mihomo-meta PACKAGE_firewall4 PACKAGE_dnsmasq-full; do
+            grep -Fx "CONFIG_${symbol}=y" .config
+          done
           bash -n ../scripts/*.sh
           sh -n files/etc/uci-defaults/zzz-be12-pro-custom
 
