@@ -9,6 +9,8 @@ on:
       - 'config/closed-source/**'
       - 'files/**'
       - 'scripts/prepare-closed.sh'
+      - 'scripts/build-closed.sh'
+      - 'scripts/build-output.py'
       - 'scripts/collect.sh'
       - 'scripts/collect-closed.sh'
       - 'scripts/publish-release.sh'
@@ -46,15 +48,20 @@ jobs:
           df -h
 
       - name: Restore closed-source download cache
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        id: cache_download
+        continue-on-error: true
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: openwrt/dl
-          key: ${{ runner.os }}-closed-source-dl-v1-${{ hashFiles('config/closed-source/**') }}
+          key: ${{ runner.os }}-closed-source-dl-v1-${{ hashFiles('config/closed-source/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
+            ${{ runner.os }}-closed-source-dl-v1-${{ hashFiles('config/closed-source/**') }}-
             ${{ runner.os }}-closed-source-dl-v1-
 
       - name: Restore closed-source compiler caches
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        id: cache_compile
+        continue-on-error: true
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
             openwrt/.ccache
@@ -81,18 +88,33 @@ jobs:
           sh -n files/etc/uci-defaults/zzz-be12-pro-custom
 
       - name: Download source archives and vendor driver archives
+        id: download
         working-directory: openwrt
         run: |
           set -o pipefail
-          make download -j8 V=s 2>&1 | tee ../build-info/download.log
+          make download -j8 V= 2>&1 | tee ../build-info/download.log
 
       - name: Compile closed-source firmware
         id: compile
-        working-directory: openwrt
-        run: |
-          set -o pipefail
-          make -j"$(nproc)" V=s 2>&1 | tee ../build-info/build.log || \
-            make -j1 V=s 2>&1 | tee ../build-info/build-retry.log
+        run: bash scripts/build-closed.sh
+
+      - name: Save closed-source downloads and Go modules
+        if: always() && steps.download.outcome == 'success'
+        continue-on-error: true
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: openwrt/dl
+          key: ${{ runner.os }}-closed-source-dl-v1-${{ hashFiles('config/closed-source/**') }}-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Save closed-source compiler caches even if later steps fail
+        if: always() && (steps.compile.outcome == 'success' || steps.compile.outcome == 'failure')
+        continue-on-error: true
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: |
+            openwrt/.ccache
+            openwrt/tmp/go-build
+          key: ${{ runner.os }}-closed-source-compile-v1-${{ hashFiles('config/closed-source/source.env', 'config/closed-source/feeds.conf') }}-${{ github.run_id }}-${{ github.run_attempt }}
 
       - name: Back up raw compiled firmware before verification
         if: steps.compile.outcome == 'success'
