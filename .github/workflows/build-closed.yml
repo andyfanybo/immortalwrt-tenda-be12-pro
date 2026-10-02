@@ -14,16 +14,31 @@ on:
       - 'scripts/collect.sh'
       - 'scripts/collect-closed.sh'
       - 'scripts/publish-release.sh'
+      - 'scripts/reserve-release-tag.sh'
 
 permissions:
   contents: write
 
-concurrency:
-  group: be12-pro-closed-source-${{ github.ref }}
-  cancel-in-progress: false
-
 jobs:
+  reserve_release_tag:
+    runs-on: ubuntu-24.04
+    outputs:
+      tag: ${{ steps.reserve.outputs.tag }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Reserve tag before long build queues
+        id: reserve
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TZ: Asia/Shanghai
+        run: bash scripts/reserve-release-tag.sh closed-source
+
   build:
+    needs: reserve_release_tag
+    concurrency:
+      group: be12-pro-closed-source-${{ github.ref }}
+      cancel-in-progress: false
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     env:
@@ -152,6 +167,7 @@ jobs:
       - name: Publish closed-source Release
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.reserve_release_tag.outputs.tag }}
         run: bash scripts/publish-release.sh closed-source
 
       - name: Upload closed-source build configuration and logs

@@ -42,6 +42,8 @@
 
 每次成功编译分别自动发布独立 Release，标签为 `open-source-日期-runID-attempt` 或 `closed-source-日期-runID-attempt`。先上传草稿，全部上传成功后才公开。历史版本不会被覆盖；两个系列均不争抢全仓库的 `latest` 标签，请按 Release 标题和标签识别路线。
 
+工作流在独立的快速任务中提前预留标签，标签指向实际构建提交；长时间编译排队只限制 build 任务。这样可以避免编译期间默认分支更新、workflow 文件变化后，`GITHUB_TOKEN` 无权对旧提交新建标签而返回 403。构建失败的预留标签不代表已有可下载固件，以公开的 Release 和附件为准。预留失败仍继续保存构建产物，必要时可从 Actions 固件附件补发；发布脚本的第二个参数支持已下载的附件目录。
+
 Actions 中也保留独立 artifact：`open-source-tenda-be12-pro-运行编号` 和 `closed-source-tenda-be12-pro-运行编号`，固件保留 30 天，日志保留 14 天。Release 附件不受 artifact 保留期限限制。Release/固件包包含：
 
 | 文件 | 用途 |
