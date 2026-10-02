@@ -15,7 +15,7 @@ cp "openwrt/$BASE_CONFIG" build-info/upstream-base.config
 cp config/closed-source/feeds.conf openwrt/feeds.conf.default
 # Preserve the full vendor Wi-Fi 7 stack. Overlay only device/app choices.
 # Last assignment wins, including explicit '# CONFIG_... is not set' entries.
-python3 - "openwrt/$BASE_CONFIG" config/closed-source/be12-pro.config openwrt/.config <<'PY'
+python3 - "openwrt/$BASE_CONFIG" config/closed-source/be12-pro.config build-info/requested.config <<'PY'
 import re
 import sys
 from pathlib import Path
@@ -39,6 +39,12 @@ chmod 0755 openwrt/files/etc/uci-defaults/zzz-be12-pro-custom
 cd openwrt
 ./scripts/feeds update -a
 ./scripts/feeds install -a
+# The 25.12 Kconfig generator recurses on the two mutually conflicting Mihomo
+# providers. We build only the stable provider; leave alpha out of package scans.
+rm -f package/feeds/nikki/mihomo-alpha
+# Feed installation can normalize .config before all packages are available.
+# Apply the complete desired configuration only after installing the feeds.
+cp "$ROOT/build-info/requested.config" .config
 mkdir -p files/etc/openclash/core
 ln -s /usr/bin/mihomo files/etc/openclash/core/clash_meta
 {

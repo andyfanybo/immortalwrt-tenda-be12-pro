@@ -68,6 +68,8 @@ WAN zone 的默认入站策略和 WAN→LAN 转发策略保持官方默认，防
 
 闭源工作流在编译前检查设备、Wi-Fi 7 支持、厂商无线驱动和代理插件；生成固件后再次检查 manifest 中的实际驱动与插件。任何缺失都会阻止发布。
 
+闭源版在安装 feeds 后应用最终配置，并从 package 扫描入口移除未使用的 `mihomo-alpha` 链接，避免该分支的配置生成器因两个互斥 Mihomo provider 产生循环依赖。固定 feed 源码不变，实际编译稳定版 `mihomo-meta`。
+
 ## 上游资料
 
 - [OpenWrt BE12 Pro 硬件条目](https://openwrt.org/toh/hwdata/tenda/tenda_be12_pro)：官方支持状态为 snapshot。
