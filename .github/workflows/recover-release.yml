@@ -1,0 +1,68 @@
+name: Recover compiled firmware Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: '已保存 closed-source-raw 附件的闭源运行 ID'
+        required: true
+        default: '37008831814'
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  recover:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TZ: Asia/Shanghai
+      SOURCE_RUN_ID: ${{ inputs.run_id }}
+      UNSQUASHFS: /usr/bin/unsquashfs
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Download existing compiled images and source build metadata
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_RUN_ID" =~ ^[0-9]+$ ]]
+          mkdir -p build-info openwrt/bin/targets/mediatek/filogic
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID" > build-info/source-run.json
+          NUMBER=$(jq -r .run_number build-info/source-run.json)
+          SHA=$(jq -r .head_sha build-info/source-run.json)
+          ATTEMPT=$(jq -r .run_attempt build-info/source-run.json)
+          DATE=$(jq -r .created_at build-info/source-run.json | TZ=Asia/Shanghai xargs -I{} date -d '{}' +%Y%m%d)
+          [[ "$SHA" =~ ^[0-9a-f]{40}$ ]]
+          gh run download "$SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY" \
+            --name "closed-source-raw-$NUMBER" --dir openwrt/bin/targets/mediatek/filogic
+          gh run download "$SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY" \
+            --name "closed-source-build-info-$NUMBER" --dir build-info/source-build
+          cp build-info/source-build/{full.config,diffconfig,source-versions.txt} build-info/
+          echo "SOURCE_SHA=$SHA" >> "$GITHUB_ENV"
+          echo "SOURCE_ATTEMPT=$ATTEMPT" >> "$GITHUB_ENV"
+          echo "RELEASE_TAG=closed-source-$DATE-$SOURCE_RUN_ID-$ATTEMPT" >> "$GITHUB_ENV"
+          (cd openwrt/bin/targets/mediatek/filogic && sha256sum --ignore-missing -c sha256sums)
+      - name: Verify installed drivers and plugins without recompiling
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq squashfs-tools
+          bash scripts/collect-closed.sh
+      - name: Upload verified recovered firmware
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: recovered-closed-source-${{ inputs.run_id }}
+          path: firmware/
+          if-no-files-found: error
+      - name: Publish original build Release
+        run: |
+          export GITHUB_RUN_ID="$SOURCE_RUN_ID"
+          export GITHUB_RUN_ATTEMPT="$SOURCE_ATTEMPT"
+          export GITHUB_SHA="$SOURCE_SHA"
+          bash scripts/publish-release.sh closed-source
+      - name: Upload recovery diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: recovery-info-${{ inputs.run_id }}-${{ github.run_id }}
+          path: build-info/

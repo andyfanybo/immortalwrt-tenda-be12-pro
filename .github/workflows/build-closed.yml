@@ -13,6 +13,7 @@ on:
       - 'scripts/build-output.py'
       - 'scripts/collect.sh'
       - 'scripts/collect-closed.sh'
+      - 'scripts/read-apk-installed.py'
       - 'scripts/publish-release.sh'
       - 'scripts/reserve-release-tag.sh'
 
