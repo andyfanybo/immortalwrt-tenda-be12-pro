@@ -58,7 +58,9 @@ jobs:
 
       - name: Download source archives
         working-directory: openwrt
-        run: make download -j8 V=s 2>&1 | tee ../build-info/download.log
+        run: |
+          set -o pipefail
+          make download -j8 V=s 2>&1 | tee ../build-info/download.log
 
       - name: Compile firmware
         working-directory: openwrt
