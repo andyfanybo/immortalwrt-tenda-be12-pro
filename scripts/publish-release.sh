@@ -39,8 +39,13 @@ mkdir -p build-info
   echo '```'
 } > build-info/release-notes.md
 # Upload to a draft first. A failed upload never leaves a published partial release.
+TAG_OPTIONS=(--target "$GITHUB_SHA")
+if tag_sha=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq .object.sha 2>/dev/null); then
+  test "$tag_sha" = "$GITHUB_SHA"
+  TAG_OPTIONS=(--verify-tag)
+fi
 gh release create "$TAG" "$ARTIFACT_DIR"/* --repo "$GITHUB_REPOSITORY" \
-  --target "$GITHUB_SHA" --draft --title "BE12 Pro · ${LABEL} · $(date +%Y-%m-%d) · ${GITHUB_RUN_ID}" \
+  "${TAG_OPTIONS[@]}" --draft --title "BE12 Pro · ${LABEL} · $(date +%Y-%m-%d) · ${GITHUB_RUN_ID}" \
   --notes-file build-info/release-notes.md
 gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest=false
 printf '\nRelease: %s/%s/releases/tag/%s\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$TAG" >> "${GITHUB_STEP_SUMMARY:-/dev/null}"
