@@ -89,7 +89,7 @@ WAN zone 的默认入站策略和 WAN→LAN 转发策略保持官方默认，防
 
 闭源工作流在编译前检查设备、Wi-Fi 7 支持、厂商无线驱动和代理插件；生成固件后再次检查 manifest 中的实际驱动与插件。任何缺失都会阻止发布。
 
-闭源版显式将内部 PHY 的 `kmod-mt798x-2p5g-phy`、`mt798x-2p5g-phy-firmware-internal` 和外部 Airoha PHY 的驱动/固件设为 `y`。产物收集从 BE12 Pro 的 sysupgrade 镜像中解出实际 rootfs，使用构建工具的 apk 查询已安装包，再生成设备专用 manifest；不把通用 root.orig 清单当成最终设备清单。
+闭源版显式将内部 PHY 的 `kmod-mt798x-2p5g-phy`、`mt798x-2p5g-phy-firmware-internal` 和外部 Airoha PHY 的驱动/固件设为 `y`。产物收集从 BE12 Pro 的 sysupgrade 镜像中提取 APK 已安装数据库，再生成设备专用 manifest；不把通用 root.orig 清单当成最终设备清单。
 
 闭源编译成功后、校验前会先上传 `closed-source-raw-运行编号` 原始备份，保留 30 天。原始备份尚未通过设备/包校验，只有完成校验的固件才发布 Release。即使后续校验失败，原始备份仍可从该次 Actions 页面下载。以前未上传备份的已结束 runner 不保留本地镜像，日志中出现文件名并不代表文件有下载链接。
 
