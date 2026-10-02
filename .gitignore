@@ -1,3 +1,5 @@
 /openwrt/
 /build-info/
 /firmware/
+__pycache__/
+*.pyc
