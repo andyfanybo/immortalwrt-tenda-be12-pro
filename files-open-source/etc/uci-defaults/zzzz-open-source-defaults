@@ -1,0 +1,16 @@
+#!/bin/sh
+# Apply after shared and package defaults. This overlay is open-source only.
+uci set luci.main.lang='zh_cn'
+uci set luci.main.mediaurlbase='/luci-static/argon'
+uci set dhcp.@dnsmasq[0].rebind_protection='0'
+uci commit luci
+uci commit dhcp
+
+# Set the requested default on a fresh install. Preserve an existing password
+# when sysupgrade keeps the user's /etc/shadow. Other users stay intact.
+if grep -q '^root::' /etc/shadow; then
+  ROOT_HASH='$6$YsruuLP9YlVV/BuA$vt69OZQuKAbZjlpxQOPJN/Y.NJ3pr69QIbOrB3zPOloEJaIfFbQp3oXJ3qx.0xS./0MCd4bEPTvTEA4o516451'
+  sed -i "s|^root:[^:]*:|root:${ROOT_HASH}:|" /etc/shadow || exit 1
+  chmod 0600 /etc/shadow
+fi
+exit 0

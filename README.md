@@ -17,7 +17,21 @@
 - firewall4 / nftables、dnsmasq-full、TUN、TPROXY 及插件依赖。
 - 上级局域网经 WAN 访问路由器的规则。
 
-**两个代理插件默认关闭，每次只启用一个。** 两条固件路线均集成这些插件。使用前在 LuCI 导入自己的订阅或配置；仓库不包含订阅、账号或密码。OpenClash 使用 Meta 内核，插件需要的 GeoIP/GeoSite 数据可在界面中更新。关闭一个插件并停止其服务后，再开启另一个，避免 DNS、端口、路由及 nftables 规则冲突。firewall4 的流量软/硬件卸载默认关闭；闭源版保留配套的厂商 HNAT/WARP 驱动，厂商加速设置与代理兼容性需实机核对。两个插件共用 Mihomo，手动更新共享内核可能影响另一个插件。
+**两个代理插件默认关闭，每次只启用一个。** 两条固件路线均集成这些插件。使用前在 LuCI 导入自己的订阅或配置；仓库不包含代理订阅或代理账号。OpenClash 使用 Meta 内核，插件需要的 GeoIP/GeoSite 数据可在界面中更新。关闭一个插件并停止其服务后，再开启另一个，避免 DNS、端口、路由及 nftables 规则冲突。firewall4 的流量软/硬件卸载默认关闭；闭源版保留配套的厂商 HNAT/WARP 驱动，厂商加速设置与代理兼容性需实机核对。两个插件共用 Mihomo，手动更新共享内核可能影响另一个插件。
+
+## 开源版默认设置
+
+2026-10-02 起的新开源构建采用以下默认值；此前已发布的固件不会被修改。
+
+| 设置 | 开源版默认值 |
+| --- | --- |
+| LuCI 语言 | 简体中文，`zh_cn` |
+| LuCI 主题 | `luci-theme-argon`，Argon |
+| DNS 重绑定保护 | 关闭，`dhcp.@dnsmasq[0].rebind_protection=0` |
+| 管理用户名 | `root` |
+| 首次安装默认密码 | `5689` |
+
+开源专用文件放在 `files-open-source/`，由开源准备脚本叠加到共享文件之后。密码以 SHA-512 crypt 哈希写入首次启动脚本；仅当 root 原密码为空时设置默认密码，保留配置升级时不会覆盖已有密码。这些开源默认设置不会应用到闭源工作流。
 
 ## 云编译和下载
 
@@ -38,6 +52,7 @@ Actions 中也保留独立 artifact：`open-source-tenda-be12-pro-运行编号` 
 | `sha256sums` | 固件完整性校验 |
 | `full.config`、`diffconfig`、`source-versions.txt` | 最终配置与源码/feed 版本 |
 | `build-flavor.txt` | 标明 `open-source` 或 `closed-source` |
+| `default-settings.txt` | 新开源构建的语言、主题、DNS 及登录默认值 |
 
 编译成功仅代表生成了固件，未经过实机刷写和网络测试。不要把 sysupgrade 或 initramfs 文件直接提交到腾达原厂升级页面。首次安装应按设备官方页面和与现有 Bootloader/分区布局匹配的方法操作；本项目不修改 Bootloader，也不生成通用 factory.bin。
 
@@ -46,7 +61,7 @@ Actions 中也保留独立 artifact：`open-source-tenda-be12-pro-运行编号` 
 - LAN 地址：**192.168.10.1/24**，用网线连接 LAN 后打开 `http://192.168.10.1` 或 `https://192.168.10.1`。HTTPS 使用设备自签名证书。
 - WAN 使用官方默认 DHCP。上级路由器 LAN 口接 BE12 Pro 的 WAN 口，在上级路由器客户端列表找到分配的 WAN IP；同一个上级局域网内的设备访问 `http://WAN-IP` / `https://WAN-IP`。
 - LAN 和上级局域网不能使用同一网段。如果上级也是 `192.168.10.0/24`，先从 LAN 修改 BE12 Pro 的 LAN 网段。
-- 用户名 `root`；未预设共享密码。首次从 LAN 登录后立即设置管理密码，再投入日常使用。SSH 密码登录需要先设置密码。
+- 开源版用户名 `root`，新构建首次安装默认密码 `5689`；保留配置升级沿用已有密码。闭源版未预设共享密码，首次从 LAN 登录后设置管理密码；SSH 密码登录需要先设置密码。
 
 ## WAN 放行范围
 
@@ -69,6 +84,18 @@ WAN zone 的默认入站策略和 WAN→LAN 转发策略保持官方默认，防
 闭源工作流在编译前检查设备、Wi-Fi 7 支持、厂商无线驱动和代理插件；生成固件后再次检查 manifest 中的实际驱动与插件。任何缺失都会阻止发布。
 
 闭源版在安装 feeds 后应用最终配置，并从 package 扫描入口移除未使用的 `mihomo-alpha` 链接，避免该分支的配置生成器因两个互斥 Mihomo provider 产生循环依赖。固定 feed 源码不变，实际编译稳定版 `mihomo-meta`。
+
+## 开源编译缓存
+
+开源工作流使用 GitHub Actions cache 保存三类可复用内容：
+
+- `openwrt/dl`：下载的源码归档及 Go 模块依赖。
+- `openwrt/.ccache`：启用 `CONFIG_CCACHE=y`，复用 C/C++ 编译结果，容量限制为 2 GB。
+- `openwrt/tmp/go-build`：Go 编译缓存，帮助复用 Mihomo 等 Go 软件的编译结果。
+
+缓存使用 `open-source` 独立键；编译缓存按主源码和 feeds 锁定版本隔离。源码归档按配置键匹配，并允许恢复较早的下载缓存，实际使用仍由构建系统校验源码哈希。工作流不会因为缓存命中而跳过配置、下载完整性检查或固件构建。
+
+首次运行没有缓存，成功后才建立缓存；后续相同源码/feed 版本可以复用。日志中可查看 cache restore 命中情况，构建日志附件中包含可用的 `ccache-stats.txt`。缓存能减少重复下载及部分编译，工具链构建、链接和镜像生成仍需执行，实际耗时取决于命中率。GitHub 可能回收旧缓存，因此缓存未命中时会正常完整编译。
 
 ## 上游资料
 

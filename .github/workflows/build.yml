@@ -10,6 +10,7 @@ on:
       - 'config/feeds.conf'
       - 'config/be12-pro.config'
       - 'files/**'
+      - 'files-open-source/**'
       - 'scripts/prepare.sh'
       - 'scripts/collect.sh'
       - 'scripts/publish-release.sh'
@@ -27,6 +28,9 @@ jobs:
     timeout-minutes: 360
     env:
       TZ: Asia/Shanghai
+      CCACHE_MAXSIZE: 2G
+      CCACHE_COMPILERCHECK: content
+      CCACHE_BASEDIR: ${{ github.workspace }}/openwrt
     steps:
       - name: Checkout build configuration
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -44,6 +48,24 @@ jobs:
             autoconf automake libtool pkgconf libyaml-dev
           df -h
 
+      - name: Restore source archives and Go modules
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: openwrt/dl
+          key: ${{ runner.os }}-open-source-dl-v1-${{ hashFiles('config/source.env', 'config/feeds.conf', 'config/be12-pro.config') }}
+          restore-keys: |
+            ${{ runner.os }}-open-source-dl-v1-
+
+      - name: Restore C/C++ and Go compiler caches
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: |
+            openwrt/.ccache
+            openwrt/tmp/go-build
+          key: ${{ runner.os }}-open-source-compile-v1-${{ hashFiles('config/source.env', 'config/feeds.conf') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            ${{ runner.os }}-open-source-compile-v1-${{ hashFiles('config/source.env', 'config/feeds.conf') }}-
+
       - name: Fetch pinned source and prepare packages
         run: bash scripts/prepare.sh
 
@@ -54,11 +76,12 @@ jobs:
           make defconfig 2>&1 | tee ../build-info/defconfig.log
           cp .config ../build-info/full.config
           ./scripts/diffconfig.sh > ../build-info/diffconfig
-          for symbol in TARGET_mediatek TARGET_mediatek_filogic TARGET_mediatek_filogic_DEVICE_tenda_be12-pro PACKAGE_luci-app-openclash PACKAGE_luci-app-nikki PACKAGE_nikki PACKAGE_mihomo-meta PACKAGE_firewall4 PACKAGE_dnsmasq-full; do
+          for symbol in TARGET_mediatek TARGET_mediatek_filogic TARGET_mediatek_filogic_DEVICE_tenda_be12-pro PACKAGE_luci-theme-argon PACKAGE_luci-i18n-base-zh-cn CCACHE PACKAGE_luci-app-openclash PACKAGE_luci-app-nikki PACKAGE_nikki PACKAGE_mihomo-meta PACKAGE_firewall4 PACKAGE_dnsmasq-full; do
             grep -Fx "CONFIG_${symbol}=y" .config
           done
           bash -n ../scripts/*.sh
           sh -n files/etc/uci-defaults/zzz-be12-pro-custom
+          sh -n files/etc/uci-defaults/zzzz-open-source-defaults
 
       - name: Download source archives
         working-directory: openwrt
@@ -74,7 +97,28 @@ jobs:
             make -j1 V=s 2>&1 | tee ../build-info/build-retry.log
 
       - name: Collect and check firmware
-        run: bash scripts/collect.sh open-source
+        run: |
+          set -euo pipefail
+          bash scripts/collect.sh open-source
+          grep -Eq '^luci-theme-argon ' firmware/*.manifest
+          printf '%s\n' \
+            '固件类型：open-source' \
+            '默认语言：简体中文' \
+            '默认主题：Argon' \
+            'DNS 重绑定保护：关闭' \
+            'LAN 地址：192.168.10.1' \
+            '用户名：root' \
+            '首次安装默认密码：5689' \
+            '保留旧配置升级时，已有 root 密码不会被重置。' \
+            > firmware/default-settings.txt
+
+      - name: Record compiler cache statistics
+        if: always()
+        run: |
+          if [ -x openwrt/staging_dir/host/bin/ccache ]; then
+            CCACHE_DIR="$GITHUB_WORKSPACE/openwrt/.ccache" \
+              openwrt/staging_dir/host/bin/ccache --show-stats | tee build-info/ccache-stats.txt
+          fi
 
       - name: Upload firmware
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

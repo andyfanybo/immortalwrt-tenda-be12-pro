@@ -13,7 +13,9 @@ grep -q '^define Device/tenda_be12-pro$' openwrt/target/linux/mediatek/image/fil
 cp config/feeds.conf openwrt/feeds.conf.default
 cp config/be12-pro.config openwrt/.config
 cp -a files openwrt/
+cp -a files-open-source/. openwrt/files/
 chmod 0755 openwrt/files/etc/uci-defaults/zzz-be12-pro-custom
+chmod 0755 openwrt/files/etc/uci-defaults/zzzz-open-source-defaults
 cd openwrt
 ./scripts/feeds update -a
 ./scripts/feeds install -a
