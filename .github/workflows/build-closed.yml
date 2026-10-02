@@ -1,16 +1,14 @@
-name: Build BE12 Pro - Open Source
+name: Build BE12 Pro - Closed Source
 
 on:
   workflow_dispatch:
   push:
     branches: [main]
     paths:
-      - '.github/workflows/build.yml'
-      - 'config/source.env'
-      - 'config/feeds.conf'
-      - 'config/be12-pro.config'
+      - '.github/workflows/build-closed.yml'
+      - 'config/closed-source/**'
       - 'files/**'
-      - 'scripts/prepare.sh'
+      - 'scripts/prepare-closed.sh'
       - 'scripts/collect.sh'
       - 'scripts/publish-release.sh'
 
@@ -18,7 +16,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: be12-pro-open-source-${{ github.ref }}
+  group: be12-pro-closed-source-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -34,7 +32,6 @@ jobs:
       - name: Prepare Linux build environment
         run: |
           set -euxo pipefail
-          # Only remove unused, preinstalled tools from the disposable runner.
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
           sudo docker image prune --all --force
           sudo apt-get update
@@ -44,56 +41,57 @@ jobs:
             autoconf automake libtool pkgconf libyaml-dev
           df -h
 
-      - name: Fetch pinned source and prepare packages
-        run: bash scripts/prepare.sh
+      - name: Fetch pinned chasey-dev source and prepare vendor Wi-Fi 7
+        run: bash scripts/prepare-closed.sh
 
-      - name: Verify device and package selection
+      - name: Verify BE12 Pro, vendor drivers and proxy packages
         working-directory: openwrt
         run: |
           set -euxo pipefail
           make defconfig 2>&1 | tee ../build-info/defconfig.log
           cp .config ../build-info/full.config
           ./scripts/diffconfig.sh > ../build-info/diffconfig
-          for symbol in TARGET_mediatek TARGET_mediatek_filogic TARGET_mediatek_filogic_DEVICE_tenda_be12-pro PACKAGE_luci-app-openclash PACKAGE_luci-app-nikki PACKAGE_nikki PACKAGE_mihomo-meta PACKAGE_firewall4 PACKAGE_dnsmasq-full; do
+          for symbol in TARGET_mediatek TARGET_mediatek_filogic TARGET_MULTI_PROFILE TARGET_DEVICE_mediatek_filogic_DEVICE_tenda_be12-pro DRIVER_11BE_SUPPORT PACKAGE_kmod-mt_wifi7 PACKAGE_kmod-mt_hwifi PACKAGE_kmod-mt7992 PACKAGE_wifi-profile PACKAGE_luci-app-mtwifi-cfg PACKAGE_luci-app-openclash PACKAGE_luci-app-nikki PACKAGE_nikki PACKAGE_mihomo-meta PACKAGE_firewall4 PACKAGE_dnsmasq-full; do
             grep -Fx "CONFIG_${symbol}=y" .config
           done
+          ! grep -Eq '^CONFIG_TARGET_DEVICE_.*routerich.*=y$' .config
           bash -n ../scripts/*.sh
           sh -n files/etc/uci-defaults/zzz-be12-pro-custom
 
-      - name: Download source archives
+      - name: Download source archives and vendor driver archives
         working-directory: openwrt
         run: |
           set -o pipefail
           make download -j8 V=s 2>&1 | tee ../build-info/download.log
 
-      - name: Compile firmware
+      - name: Compile closed-source firmware
         working-directory: openwrt
         run: |
           set -o pipefail
           make -j"$(nproc)" V=s 2>&1 | tee ../build-info/build.log || \
             make -j1 V=s 2>&1 | tee ../build-info/build-retry.log
 
-      - name: Collect and check firmware
-        run: bash scripts/collect.sh open-source
+      - name: Collect and verify closed-source firmware
+        run: bash scripts/collect.sh closed-source
 
-      - name: Upload firmware
+      - name: Upload closed-source firmware
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: open-source-tenda-be12-pro-${{ github.run_number }}
+          name: closed-source-tenda-be12-pro-${{ github.run_number }}
           path: firmware/
           if-no-files-found: error
           retention-days: 30
 
-      - name: Publish open-source Release
+      - name: Publish closed-source Release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: bash scripts/publish-release.sh open-source
+        run: bash scripts/publish-release.sh closed-source
 
-      - name: Upload build configuration and logs
+      - name: Upload closed-source build configuration and logs
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: open-source-build-info-${{ github.run_number }}
+          name: closed-source-build-info-${{ github.run_number }}
           path: build-info/
           if-no-files-found: warn
           retention-days: 14
