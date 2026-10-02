@@ -33,6 +33,10 @@
 
 开源专用文件放在 `files-open-source/`，由开源准备脚本叠加到共享文件之后。密码以 SHA-512 crypt 哈希写入首次启动脚本；仅当 root 原密码为空时设置默认密码，保留配置升级时不会覆盖已有密码。这些开源默认设置不会应用到闭源工作流。
 
+开源版集成 `autocore` 和 `kmod-hwmon-core`，在 **状态 → 概览 → 系统** 中启用温度信息。上游 LuCI 的 `getTempInfo` 调用通过 `/sbin/tempinfo` 读取 CPU thermal 和 Wi-Fi hwmon 传感器；读数会随概览页刷新。
+
+Wi-Fi 温度可能显示为一组读数，取决于 mt76 暴露的传感器。上游 helper 不提供可靠的 2.4 GHz / 5 GHz 标签，不应按 `phy0`、`phy1` 编号猜测频段。无线关闭、驱动未暴露传感器或读取失败时，无法保证两个无线读数都显示；不会填入虚构温度。需要明确分频段标签时，应先在实机核对传感器与频段的对应关系。
+
 ## 云编译和下载
 
 1. 打开仓库 **Actions**，按需选择 **Build BE12 Pro - Open Source** 或 **Build BE12 Pro - Closed Source**，点击 **Run workflow**。两条工作流可独立运行，互不取消或覆盖。

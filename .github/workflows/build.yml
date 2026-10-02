@@ -91,7 +91,7 @@ jobs:
           make defconfig 2>&1 | tee ../build-info/defconfig.log
           cp .config ../build-info/full.config
           ./scripts/diffconfig.sh > ../build-info/diffconfig
-          for symbol in TARGET_mediatek TARGET_mediatek_filogic TARGET_mediatek_filogic_DEVICE_tenda_be12-pro PACKAGE_luci-theme-argon PACKAGE_luci-i18n-base-zh-cn CCACHE PACKAGE_luci-app-openclash PACKAGE_luci-app-nikki PACKAGE_nikki PACKAGE_mihomo-meta PACKAGE_firewall4 PACKAGE_dnsmasq-full; do
+          for symbol in TARGET_mediatek TARGET_mediatek_filogic TARGET_mediatek_filogic_DEVICE_tenda_be12-pro PACKAGE_luci-theme-argon PACKAGE_luci-i18n-base-zh-cn PACKAGE_autocore PACKAGE_kmod-hwmon-core CCACHE PACKAGE_luci-app-openclash PACKAGE_luci-app-nikki PACKAGE_nikki PACKAGE_mihomo-meta PACKAGE_firewall4 PACKAGE_dnsmasq-full; do
             grep -Fx "CONFIG_${symbol}=y" .config
           done
           bash -n ../scripts/*.sh
@@ -116,6 +116,8 @@ jobs:
           set -euo pipefail
           bash scripts/collect.sh open-source
           grep -Eq '^luci-theme-argon ' firmware/*.manifest
+          grep -Eq '^autocore ' firmware/*.manifest
+          grep -Eq '^kmod-hwmon-core ' firmware/*.manifest
           printf '%s\n' \
             '固件类型：open-source' \
             '默认语言：简体中文' \
