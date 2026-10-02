@@ -1,0 +1,42 @@
+#!/bin/sh
+# First boot only. Runs after the packages' own defaults.
+uci set network.lan.ipaddr='192.168.10.1'
+uci set network.lan.netmask='255.255.255.0'
+uci set system.@system[0].hostname='Tenda-BE12-Pro'
+uci set system.@system[0].zonename='Asia/Shanghai'
+uci set system.@system[0].timezone='CST-8'
+
+# Allow devices in the upstream private LAN to access this router over WAN.
+# INPUT only: keep the WAN zone policy, NAT, and WAN->LAN forwarding intact.
+uci -q delete firewall.be12_private_wan_v4
+uci set firewall.be12_private_wan_v4='rule'
+uci set firewall.be12_private_wan_v4.name='Allow-Private-LAN-to-WAN-IPv4'
+uci set firewall.be12_private_wan_v4.src='wan'
+uci set firewall.be12_private_wan_v4.family='ipv4'
+uci set firewall.be12_private_wan_v4.proto='all'
+uci add_list firewall.be12_private_wan_v4.src_ip='10.0.0.0/8'
+uci add_list firewall.be12_private_wan_v4.src_ip='172.16.0.0/12'
+uci add_list firewall.be12_private_wan_v4.src_ip='192.168.0.0/16'
+uci set firewall.be12_private_wan_v4.target='ACCEPT'
+uci -q delete firewall.be12_private_wan_v6
+uci set firewall.be12_private_wan_v6='rule'
+uci set firewall.be12_private_wan_v6.name='Allow-Private-LAN-to-WAN-IPv6'
+uci set firewall.be12_private_wan_v6.src='wan'
+uci set firewall.be12_private_wan_v6.family='ipv6'
+uci set firewall.be12_private_wan_v6.proto='all'
+uci add_list firewall.be12_private_wan_v6.src_ip='fc00::/7'
+uci add_list firewall.be12_private_wan_v6.src_ip='fe80::/10'
+uci set firewall.be12_private_wan_v6.target='ACCEPT'
+
+uci set openclash.config.enable='0'
+uci set openclash.config.core_type='Meta'
+uci set nikki.config.enabled='0'
+# Transparent proxy and flow offloading should not compete.
+uci set firewall.@defaults[0].flow_offloading='0'
+uci set firewall.@defaults[0].flow_offloading_hw='0'
+uci commit network
+uci commit system
+uci commit firewall
+uci commit openclash
+uci commit nikki
+exit 0

@@ -1,0 +1,3 @@
+* text=auto eol=lf
+*.sh text eol=lf
+files/etc/uci-defaults/* text eol=lf
