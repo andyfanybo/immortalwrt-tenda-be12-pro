@@ -91,9 +91,10 @@ jobs:
           make defconfig 2>&1 | tee ../build-info/defconfig.log
           cp .config ../build-info/full.config
           ./scripts/diffconfig.sh > ../build-info/diffconfig
-          for symbol in TARGET_mediatek TARGET_mediatek_filogic TARGET_mediatek_filogic_DEVICE_tenda_be12-pro PACKAGE_luci-theme-argon PACKAGE_luci-i18n-base-zh-cn PACKAGE_autocore PACKAGE_kmod-hwmon-core CCACHE PACKAGE_luci-app-openclash PACKAGE_luci-app-nikki PACKAGE_nikki PACKAGE_mihomo-meta PACKAGE_firewall4 PACKAGE_dnsmasq-full; do
+          for symbol in TARGET_mediatek TARGET_mediatek_filogic TARGET_mediatek_filogic_DEVICE_tenda_be12-pro PACKAGE_luci-theme-argon PACKAGE_luci-i18n-base-zh-cn PACKAGE_autocore PACKAGE_kmod-hwmon-core CCACHE PACKAGE_luci-app-openclash PACKAGE_mihomo-meta PACKAGE_firewall4 PACKAGE_dnsmasq-full; do
             grep -Fx "CONFIG_${symbol}=y" .config
           done
+          ! grep -Eq '^CONFIG_PACKAGE_(nikki|luci-app-nikki|luci-i18n-nikki-[^=]+)=[ym]$' .config
           bash -n ../scripts/*.sh
           sh -n files/etc/uci-defaults/zzz-be12-pro-custom
           sh -n files/etc/uci-defaults/zzzz-open-source-defaults
@@ -124,7 +125,8 @@ jobs:
             '默认语言：简体中文' \
             '默认主题：Argon' \
             'DNS 重绑定保护：关闭' \
-            'LAN 地址：192.168.10.1' \
+            'LAN 地址：192.168.1.1' \
+            '代理插件：仅 OpenClash，预装 Mihomo 内核，不含 Nikki' \
             '用户名：root' \
             '首次安装默认密码：5689' \
             '2.4GHz：td2 / 12345678a / Wi-Fi 7 EHT20 / 自动信道 / CN' \

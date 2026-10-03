@@ -16,13 +16,17 @@ mkdir -p build-info
   printf '# Tenda BE12 Pro · %s\n\n' "$LABEL"
   printf '固件类型：**%s**。仅包含该驱动版本的固件，请勿与另一类型混淆。\n\n' "$FLAVOR"
   printf '编译记录：[GitHub Actions](%s/%s/actions/runs/%s)。\n\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID"
-  echo '预装 OpenClash、Nikki 和稳定版 Mihomo，两个插件默认关闭，每次只启用一个。'
-  echo 'LAN 地址 192.168.10.1；WAN 允许上级私有局域网访问本机。'
+  if grep -Eq '^nikki ' "$ARTIFACT_DIR"/*.manifest; then
+    echo '预装 OpenClash、Nikki 和稳定版 Mihomo，两个插件默认关闭，每次只启用一个。'
+  else
+    echo '预装 OpenClash 和稳定版 Mihomo，不含 Nikki；OpenClash 默认关闭。'
+  fi
+  echo 'WAN 允许上级私有局域网访问本机。'
   if [ -f "$ARTIFACT_DIR/default-settings.txt" ]; then
     echo
     cat "$ARTIFACT_DIR/default-settings.txt"
   else
-    echo '首次登录后设置 root 密码。'
+    echo 'LAN 地址 192.168.10.1；首次登录后设置 root 密码。'
   fi
   echo
   echo 'sysupgrade 用于兼容系统升级；initramfs 用于临时启动/设备安装流程，不是原厂网页升级包。'

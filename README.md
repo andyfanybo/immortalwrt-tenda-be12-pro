@@ -12,12 +12,12 @@
 ## 已集成
 
 - LuCI 网页管理、HTTPS、简体中文。
-- OpenClash（ImmortalWrt 官方 LuCI feed）与 Nikki（作者官方 feed）。
+- 开源版仅集成 OpenClash；闭源版保留 OpenClash 与 Nikki。
 - 稳定版 `mihomo-meta`：在云端从源代码编译 ARM64 内核，Nikki 使用 `/usr/bin/mihomo`，OpenClash 的 `/etc/openclash/core/clash_meta` 链接到同一内核。无需首次启动时另行下载内核。
 - firewall4 / nftables、dnsmasq-full、TUN、TPROXY 及插件依赖。
 - 上级局域网经 WAN 访问路由器的规则。
 
-**两个代理插件默认关闭，每次只启用一个。** 两条固件路线均集成这些插件。使用前在 LuCI 导入自己的订阅或配置；仓库不包含代理订阅或代理账号。OpenClash 使用 Meta 内核，插件需要的 GeoIP/GeoSite 数据可在界面中更新。关闭一个插件并停止其服务后，再开启另一个，避免 DNS、端口、路由及 nftables 规则冲突。firewall4 的流量软/硬件卸载默认关闭；闭源版保留配套的厂商 HNAT/WARP 驱动，厂商加速设置与代理兼容性需实机核对。两个插件共用 Mihomo，手动更新共享内核可能影响另一个插件。
+**开源版只保留 OpenClash，默认关闭，不安装 Nikki、Nikki 页面及其语言包。** 稳定版 Mihomo 仍从已固定版本的作者 feed 编译，作为 OpenClash 的 Meta 内核；保留编译配方不代表安装 Nikki 插件。闭源版仍预装两个插件，默认关闭，每次只启用一个。使用前在 LuCI 导入自己的订阅或配置；仓库不包含代理订阅或代理账号。OpenClash 需要的 GeoIP/GeoSite 数据可在界面中更新。firewall4 的软/硬件流量卸载默认关闭。
 
 ## 开源版默认设置
 
@@ -30,6 +30,8 @@
 | DNS 重绑定保护 | 关闭，`dhcp.@dnsmasq[0].rebind_protection=0` |
 | 管理用户名 | `root` |
 | 首次安装默认密码 | `5689` |
+| LAN 地址 | `192.168.1.1/24` |
+| 代理插件 | 仅 OpenClash，预装 Mihomo Meta 内核，不含 Nikki |
 | 2.4 GHz Wi-Fi | SSID `td2`，密码 `12345678a`，Wi-Fi 7 / EHT20，自动信道，国家代码 CN |
 | 5 GHz Wi-Fi | SSID `test`，密码 `12345678a`，Wi-Fi 7 / EHT160，信道 36，国家代码 CN |
 | 无线加密 | WPA2-PSK / WPA3-SAE 混合，PMF 可选 |
@@ -70,9 +72,9 @@ Actions 中也保留独立 artifact：`open-source-tenda-be12-pro-运行编号` 
 
 ## 首次访问
 
-- LAN 地址：**192.168.10.1/24**，用网线连接 LAN 后打开 `http://192.168.10.1` 或 `https://192.168.10.1`。HTTPS 使用设备自签名证书。
+- 新开源版 LAN 地址为 **192.168.1.1/24**，从 LAN 打开 `http://192.168.1.1` 或 `https://192.168.1.1`。闭源版为 **192.168.10.1/24**。HTTPS 使用设备自签名证书。
 - WAN 使用官方默认 DHCP。上级路由器 LAN 口接 BE12 Pro 的 WAN 口，在上级路由器客户端列表找到分配的 WAN IP；同一个上级局域网内的设备访问 `http://WAN-IP` / `https://WAN-IP`。
-- LAN 和上级局域网不能使用同一网段。如果上级也是 `192.168.10.0/24`，先从 LAN 修改 BE12 Pro 的 LAN 网段。
+- LAN 和上级局域网不能使用同一网段；如果相同，先从 LAN 修改 BE12 Pro 的 LAN 网段。
 - 开源版用户名 `root`，新构建首次安装默认密码 `5689`；保留配置升级沿用已有密码。闭源版未预设共享密码，首次从 LAN 登录后设置管理密码；SSH 密码登录需要先设置密码。
 
 ## WAN 放行范围

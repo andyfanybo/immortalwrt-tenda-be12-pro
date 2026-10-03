@@ -21,9 +21,11 @@ cd openwrt
 ./scripts/feeds install -a
 # Only build the stable Mihomo provider. Keep the final app/language choices
 # until after feed installation, when all of their Kconfig symbols exist.
-rm -f package/feeds/nikki/mihomo-alpha
+rm -f package/feeds/nikki/mihomo-alpha package/feeds/nikki/nikki package/feeds/nikki/luci-app-nikki
 cp "$ROOT/config/be12-pro.config" .config
-# Both frontends use the stable Mihomo binary compiled by the Nikki feed.
+# Keep the shared boot defaults for the vendor build, and omit Nikki setup here.
+sed -i '/^uci set nikki\.config\.enabled=/d; /^uci commit nikki$/d' files/etc/uci-defaults/zzz-be12-pro-custom
+# OpenClash uses the stable Mihomo binary from the pinned upstream feed.
 # A symlink avoids including a second large ARM64 core in 128 MB NAND.
 mkdir -p files/etc/openclash/core
 ln -s /usr/bin/mihomo files/etc/openclash/core/clash_meta
