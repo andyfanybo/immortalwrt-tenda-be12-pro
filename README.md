@@ -30,8 +30,14 @@
 | DNS 重绑定保护 | 关闭，`dhcp.@dnsmasq[0].rebind_protection=0` |
 | 管理用户名 | `root` |
 | 首次安装默认密码 | `5689` |
+| 2.4 GHz Wi-Fi | SSID `td2`，密码 `12345678a`，Wi-Fi 7 / EHT20，自动信道，国家代码 CN |
+| 5 GHz Wi-Fi | SSID `test`，密码 `12345678a`，Wi-Fi 7 / EHT160，信道 36，国家代码 CN |
+| 无线加密 | WPA2-PSK / WPA3-SAE 混合，PMF 可选 |
+| Dropbear | 不绑定接口，勾选网关端口（`GatewayPorts=on`） |
 
 开源专用文件放在 `files-open-source/`，由开源准备脚本叠加到共享文件之后。密码以 SHA-512 crypt 哈希写入首次启动脚本；仅当 root 原密码为空时设置默认密码，保留配置升级时不会覆盖已有密码。这些开源默认设置不会应用到闭源工作流。
+
+无线预设先运行官方配置生成器，再按设备的 `band` 字段匹配 2.4 GHz / 5 GHz，并启用对应默认 AP，不依赖 radio0/radio1 的编号或单/多 wiphy 结构。首次启动脚本同时清除 Dropbear 的 Interface/DirectInterface 绑定，设置 GatewayPorts 为 on。GatewayPorts 是 SSH 端口转发的监听设置；防火墙仍按本仓库的规则控制入站访问。无线实际可用信道和带宽由 CN 区域规则、驱动与客户端共同决定，5 GHz 的 160 MHz 组合可能需要 DFS 检测。需要完整采用这些无线预设时，备份后不保留配置升级。
 
 开源版集成 `autocore` 和 `kmod-hwmon-core`，在 **状态 → 概览 → 系统** 中启用温度信息。上游 LuCI 的 `getTempInfo` 调用通过 `/sbin/tempinfo` 读取 CPU thermal 和 Wi-Fi hwmon 传感器；读数会随概览页刷新。
 

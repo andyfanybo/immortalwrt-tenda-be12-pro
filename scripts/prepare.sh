@@ -15,6 +15,7 @@ cp -a files openwrt/
 cp -a files-open-source/. openwrt/files/
 chmod 0755 openwrt/files/etc/uci-defaults/zzz-be12-pro-custom
 chmod 0755 openwrt/files/etc/uci-defaults/zzzz-open-source-defaults
+chmod 0755 openwrt/files/etc/uci-defaults/zzzzz-open-source-network
 cd openwrt
 ./scripts/feeds update -a
 ./scripts/feeds install -a

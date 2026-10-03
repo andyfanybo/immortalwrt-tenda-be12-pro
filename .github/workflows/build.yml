@@ -97,6 +97,7 @@ jobs:
           bash -n ../scripts/*.sh
           sh -n files/etc/uci-defaults/zzz-be12-pro-custom
           sh -n files/etc/uci-defaults/zzzz-open-source-defaults
+          sh -n files/etc/uci-defaults/zzzzz-open-source-network
 
       - name: Download source archives
         working-directory: openwrt
@@ -126,6 +127,10 @@ jobs:
             'LAN 地址：192.168.10.1' \
             '用户名：root' \
             '首次安装默认密码：5689' \
+            '2.4GHz：td2 / 12345678a / Wi-Fi 7 EHT20 / 自动信道 / CN' \
+            '5GHz：test / 12345678a / Wi-Fi 7 EHT160 / 信道 36 / CN' \
+            '无线加密：WPA2-PSK/WPA3-SAE 混合模式' \
+            'Dropbear：不绑定接口，GatewayPorts=on' \
             '保留旧配置升级时，已有 root 密码不会被重置。' \
             > firmware/default-settings.txt
 
