@@ -39,6 +39,19 @@ chmod 0755 openwrt/files/etc/uci-defaults/zzz-be12-pro-custom
 cd openwrt
 ./scripts/feeds update -a
 ./scripts/feeds install -a
+# Rust's temporary CI LLVM artifacts may be deleted, producing HTTP 404.
+# Match OpenWrt's source-build fallback without changing our pinned feeds.
+rust_makefile=feeds/packages/lang/rust/Makefile
+if [[ ! -f "$rust_makefile" ]]; then
+  echo "Rust build recipe missing: $rust_makefile" >&2
+  exit 1
+fi
+sed -i 's/--set=llvm\\.download-ci-llvm=true/--set=llvm.download-ci-llvm=false/' "$rust_makefile"
+if ! grep -Fq -- '--set=llvm.download-ci-llvm=false' "$rust_makefile"; then
+  echo "Failed to disable Rust CI LLVM download in $rust_makefile" >&2
+  exit 1
+fi
+echo "Rust: build LLVM locally instead of downloading expiring CI artifacts."
 # The 25.12 Kconfig generator recurses on the two mutually conflicting Mihomo
 # providers. We build only the stable provider; leave alpha out of package scans.
 rm -f package/feeds/nikki/mihomo-alpha
