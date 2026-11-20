@@ -46,7 +46,7 @@ if [[ ! -f "$rust_makefile" ]]; then
   echo "Rust build recipe missing: $rust_makefile" >&2
   exit 1
 fi
-sed -i 's/--set=llvm\\.download-ci-llvm=true/--set=llvm.download-ci-llvm=false/' "$rust_makefile"
+sed -i 's/--set=llvm\.download-ci-llvm=true/--set=llvm.download-ci-llvm=false/' "$rust_makefile"
 if ! grep -Fq -- '--set=llvm.download-ci-llvm=false' "$rust_makefile"; then
   echo "Failed to disable Rust CI LLVM download in $rust_makefile" >&2
   exit 1
